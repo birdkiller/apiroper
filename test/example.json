@@ -1,0 +1,33 @@
+{
+	"getUserInfo":{
+		"Output":{"staffid":"<<staffInfo.Id>>",
+				  "imid": "<<imUserInfo.Id>>"},
+		"Resources":{
+			"imUserInfo": {
+				"Url":"im/getUserInfo?mid=1&uid=<<uid>>&token=<<login.SessionToken>>",
+				"Header": {"Content-type": "application/json", 
+						   "token":"<<login.SessionToken>>"},
+				"Method": "POST",
+				"Input": {"uid":"<<login.User.Uid>>"},
+				"Timeout": 10
+			},
+			"staffInfo": {
+				"Url": "im/getStaffInfo?mid=1&uid=<<uid>>&token=<<login.SessionToken>>",
+				"Header": {"Content-type": "application/json", 
+						   "token":"<<login.SessionToken>>"},
+				"Method": "POST",
+				"Input": {"uid":"<<login.User.Uid>>"}
+			},
+			"login": {
+				"Url": "account/Login",
+				"Header": {"Content-type": "application/json"},
+				"Method": "POST",
+				"Input": {"Id":"<<mobile>>",
+							"IdType": 2,
+							"UsePassword": true,
+							"LoginToken":"123123",
+							"AuthBotToken":""}
+			}
+		}
+	}	
+}
