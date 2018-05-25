@@ -9,7 +9,7 @@ A package which offers abilities to make apis called togather, no matter synchro
 
 ## 用法：
 1. 加载：
-  `import "saas/common/utils/apiroper"
+  `import "github.com/birdkiller/apiroper"
 			templates := map[string]apiroper.Template{}
 			apiroper.Load(templates)`
       
