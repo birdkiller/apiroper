@@ -6,7 +6,7 @@
 	自动选择同步或异步请求并根据模版聚合输出。
 	用法：
 		1、加载：
-			import "saas/common/utils/apiroper"
+			import "github.com/birdkiller/apiroper"
 			templates := map[string]apiroper.Template{}
 			apiroper.Load(templates)
 		2、调用：
