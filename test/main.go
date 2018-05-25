@@ -19,7 +19,7 @@ func main() {
 						   "token":"<<login.data.SessionToken>>"},
 				"Method": "POST",
 				"Input": {"uid":"<<login.data.User.Uid>>"},
-				"Timeout": 10
+				"Timeout": 10000
 			},
 			"staffInfo": {
 				"Url": "http://192.168.8.111:8080/organization/GetCurPosAndPoslistByUid?mid=1&uid=<<login.data.User.Uid>>&token=<<login.data.SessionToken>>",

@@ -42,7 +42,7 @@
 				value为字符串值，value也可以由<<变量路径>>整体替换。
 				例如：
 					Header:{"Content-Type":"application/json", "Token":"<<login.data.Token>>"}
-				Resource.Timeout - api资源获取超时时间秒数、暂未实现
+				Resource.Timeout - api资源获取超时时间毫秒数
 
 			变量路径 - 一个由`<<`和`>>`包围的字符串组成的标签，一个变量路径代表一个
 			由调用输入或请求获得的值。形如`<<login.data.SessionToken>>`，代表内存map
@@ -70,8 +70,10 @@ package apiroper
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
+	"time"
 )
 
 var callstacks map[string]*sync.Pool
@@ -201,20 +203,17 @@ func (self *CallStack) getOutput(data interface{}) interface{} {
 
 // call 调用
 func (self *CallStack) call(args map[string]interface{}) (out interface{}, err error) {
-	allfinished := []chan bool{}
+	finishgroup := sync.WaitGroup{}
 	for _, dep := range self.dependences {
 		res, _ := self.resources[dep]
 		if res == nil {
 			return nil, fmt.Errorf("Unsupported resource %s", dep)
 		}
-		finished := make(chan bool)
-		go res.call(finished)
-		allfinished = append(allfinished, finished)
+		go res.call(&finishgroup)
+		finishgroup.Add(1)
 	}
-
-	for _, finished := range allfinished {
-		<-finished
-	}
+	// 等待全部执行完
+	finishgroup.Wait()
 
 	// 根据输出模版获取输出
 	out = self.getOutput(self.Output)
@@ -226,46 +225,60 @@ func (self *CallStack) reset() {
 }
 
 // call
-func (self *ResourceCaller) call(finished chan bool) {
-	defer func() {
-		finished <- true
-	}()
+func (self *ResourceCaller) call(g *sync.WaitGroup) error {
+	defer g.Done()
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 	if self.iscalled != false {
-		return
+		return nil
 	}
 
 	// 调用标记防止重复调用
 	self.iscalled = true
 
 	// 先调用依赖资源
-	allfinished := []chan bool{}
+	finishgroup := sync.WaitGroup{}
 	for _, dep := range self.dependences {
 		res, _ := self.stack.resources[dep]
 		if res == nil {
 			continue
 		}
-		finished := make(chan bool)
-		go res.call(finished)
-		allfinished = append(allfinished, finished)
+		go res.call(&finishgroup)
+		finishgroup.Add(1)
 	}
 
 	// 等待全部执行完毕
-	for _, finished := range allfinished {
-		<-finished
-	}
+	finishgroup.Wait()
 
 	url := self.getUrl()
 	headers := self.getHeader()
 	input := self.getInput(self.Input)
 	data, _ := json.Marshal(input)
-	code, body, _ := post(url, data, headers)
+	complete := make(chan error) // 结果chan
+	if self.Timeout == 0 {
+		self.Timeout = DEFAULT_TIMEOUT_DURATION
+	}
+	timeout := time.After(time.Duration(self.Timeout) * time.Millisecond) // 超时chan
+	go func() {
+		code, body, err := post(url, data, headers)
 
-	if code == 200 {
-		ret := map[string]interface{}{}
-		json.Unmarshal(body, &ret)
-		self.stack.context[self.Id] = ret
+		if code == 200 {
+			ret := map[string]interface{}{}
+			json.Unmarshal(body, &ret)
+			self.stack.context[self.Id] = ret
+		}
+
+		complete <- err
+
+	}()
+
+	select {
+	case err := <-complete:
+		return err
+	case <-timeout:
+		err := fmt.Errorf("[%s] calls timeout", self.Url)
+		log.Println(err)
+		return err
 	}
 
 }

@@ -46,7 +46,7 @@ A package which offers abilities to make apis called togather, no matter synchro
 				value为字符串值，value也可以由<<变量路径>>整体替换。
     + 例如：
 					Header:{"Content-Type":"application/json", "Token":"<<login.data.Token>>"}
-    + Resource.Timeout - api资源获取超时时间秒数、暂未实现
+    + Resource.Timeout - api资源获取超时时间秒数
   + 变量路径 - 一个由`<<`和`>>`包围的字符串组成的标签，一个变量路径代表一个
 			由调用输入或请求获得的值。形如`<<login.data.SessionToken>>`，代表内存map
 			中以["login"]["data"]["SessionToken"]取得的值。而`<<login.data.Users.0.Id>>`,
@@ -67,6 +67,5 @@ A package which offers abilities to make apis called togather, no matter synchro
   
 ## TODO
 1. 支持多种协议或进行接口化（目前只支持http.POST）
-2. 支持子请求timeout配置
 3. 提供全局事务一致性支持
     
