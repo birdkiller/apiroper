@@ -209,8 +209,9 @@ func (self *CallStack) call(args map[string]interface{}) (out interface{}, err e
 		if res == nil {
 			return nil, fmt.Errorf("Unsupported resource %s", dep)
 		}
-		go res.call(&finishgroup)
 		finishgroup.Add(1)
+		go res.call(&finishgroup)
+
 	}
 	// 等待全部执行完
 	finishgroup.Wait()
